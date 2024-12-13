@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/kubernetes/kompose/pkg/app"
 	"github.com/kubernetes/kompose/pkg/kobject"
@@ -14,10 +13,6 @@ import (
 	"github.com/kubernetes/kompose/pkg/transformer/openshift"
 	"github.com/layer5io/meshkit/utils"
 	"gopkg.in/yaml.v2"
-)
-
-var (
-	list = "List"
 )
 
 const DefaultDockerComposeSchemaURL = "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json"
@@ -100,34 +95,7 @@ func Convert(dockerCompose DockerComposeFile) (string, error) {
 	if err != nil {
 		return "", ErrCvrtKompose(err)
 	}
-	formattedResult, err := formatConvertedManifest(string(result))
-	if err != nil {
-		return "", ErrCvrtKompose(err)
-	}
-	return formattedResult, nil
-}
-
-func formatConvertedManifest(k8sMan string) (string, error) {
-	formattedManifest := ""
-
-	manifest := map[string]interface{}{}
-	if err := yaml.Unmarshal([]byte(k8sMan), &manifest); err != nil {
-		return "", err
-	}
-
-	if manifest["kind"] == list {
-		items := manifest["items"].([]interface{})
-		tempMans := []string{}
-		for _, resMan := range items {
-			res, err := yaml.Marshal(&resMan)
-			if err != nil {
-				return formattedManifest, nil
-			}
-			tempMans = append(tempMans, string(res))
-		}
-		formattedManifest = strings.Join(tempMans, "\n---\n")
-	}
-	return formattedManifest, nil
+    return string(result), nil
 }
 
 type composeFile struct {
@@ -150,7 +118,7 @@ func versionCheck(dc DockerComposeFile) error {
 	if err != nil {
 		return utils.ErrExpectedTypeMismatch(err, "float")
 	} else {
-		if versionFloatVal > 3.3 {
+		if versionFloatVal > 3.8 {
 			// kompose throws a fatal error when version exceeds 3.3
 			// need this till this PR gets merged https://github.com/kubernetes/kompose/pull/1440(move away from libcompose to compose-go)
 			return ErrIncompatibleVersion()
